@@ -34,12 +34,17 @@ def main(argv):
     inactiveCpcodes = check_cpcodes(ldsConfigs, cpcodes)
     # We now have a valid list of cpcodes to provision.
     # Connect to NetStorage and create storage locations
-    print("Connecting to NetStorage", flush=True)
-    connectionDetails = get_netstorage_credentials("alda.netstorage")
-    create_netstorage_paths(sformat, geo, inactiveCpcodes, connectionDetails)
-    # Create LDS Configurations
-    print("Creating LDS configs")
-    create_lds_configs(sformat, geo, inactiveCpcodes, connectionDetails)
+    if len(inactiveCpcodes) > 0:
+        print("", flush=True)
+        print("Connecting to NetStorage", flush=True)
+        connectionDetails = get_netstorage_credentials("alda.netstorage")
+        create_netstorage_paths(sformat, geo, inactiveCpcodes, connectionDetails)
+        # Create LDS Configurations
+        print("", flush=True)
+        print("Creating LDS configs", flush=True)
+        create_lds_configs(sformat, geo, inactiveCpcodes, connectionDetails)
+    else:
+        return
 
 
 def Help(errorHelp):
@@ -74,7 +79,7 @@ def check_cpcodes(ldsConfigs, cpcodes):
         if cpcode in cpcodes and status == 'ACTIVE':
             cpcodes.remove(cpcode)
             print("CPCode '{0} - {1}' has an active LDS configuration. "
-                  "Please manually review.".format(cpcode, cpcode_name))
+                  "Please manually review.".format(cpcode, cpcode_name), flush=True)
     return cpcodes
 
 
@@ -85,7 +90,7 @@ def create_netstorage_paths(sformat, geo, cpcodes, connectionDetails):
                         connectionDetails['kname'],
                         connectionDetails['key'], ssl=True)
         ns_dir = '/' + connectionDetails['cpcode'] + '/' + file_path
-        print("Creating {0}".format(ns_dir))
+        print("Creating {0}".format(ns_dir), flush=True)
         ns.mkdir(ns_dir)
 
 
@@ -135,7 +140,7 @@ def create_lds_configs(sformat, geo, cpcodes, connectionDetails):
             "messageSize": { "dictId": "1" },
             "encoding": { "dictId": "3" },
             "contact": {
-                "contactEmail": ["nibenson@amazon.com"],
+                "contactEmail": ["amazon-dm-support@akamai.com"],
                 "dictId": "B-C-PNOHOD"
             }
         }''')
@@ -151,7 +156,11 @@ def create_lds_configs(sformat, geo, cpcodes, connectionDetails):
         s = requests.Session()
         s.auth = EdgeGridAuth.from_edgerc(edgerc, section)
         result = s.post(urljoin(baseurl, '/lds/v1/configurations'), data=json.dumps(lds_payload), headers={'Accept': '*/*', 'Content-Type': 'application/json'})
-        print(result.text)
+        if result.status_code == 200:
+            print("LDS successfully created for CPCode: {0}".format(cpcode), flush=True)
+        else:
+            print("LDS creation FAILED for CPCode: {0}".format(cpcode), flush=True)
+            print(result.text)
 
 
 if __name__ == "__main__":
