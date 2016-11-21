@@ -112,7 +112,6 @@ def get_netstorage_credentials(configFile):
 
 def create_lds_configs(sformat, geo, cpcodes, connectionDetails):
     for cpcode in cpcodes:
-        print(cpcode)
         lds_payload = json.loads('''
         {
             "configurationType": "PRIMARY",
@@ -146,7 +145,13 @@ def create_lds_configs(sformat, geo, cpcodes, connectionDetails):
             "/{0}/logdelivery/{1}/{2}/{3}".format(
             connectionDetails['cpcode'], sformat, geo, cpcode)
         lds_payload['ftpConfiguration']['password'] = connectionDetails['password']
-        print(lds_payload)
+        edgerc = EdgeRc('alda.edgerc')
+        section = 'C-14QDNW3'
+        baseurl = 'https://{0}'.format(edgerc.get(section, 'host'))
+        s = requests.Session()
+        s.auth = EdgeGridAuth.from_edgerc(edgerc, section)
+        result = s.post(urljoin(baseurl, '/lds/v1/configurations'), data=json.dumps(lds_payload), headers={'Accept': '*/*', 'Content-Type': 'application/json'})
+        print(result.text)
 
 
 if __name__ == "__main__":
