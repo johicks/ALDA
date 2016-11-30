@@ -21,14 +21,14 @@ def main(args):
 
     # Get OPEN API credentials and create connection object
     openapiObj = create_openapi_request('alda.edgerc', args.geo)
-    print(openapiObj)
+
     # Get List of LDS Configurations
     print('Retreiving LDS configs', flush=True)
     ldsObj = get_lds_configs(openapiObj)
-    print(ldsObj)
+
     # Remove cpcodes with ACTIVE LDS configurations and warn user
-    # print('Checking cpcode list against active configs', flush=True)
-    # inactiveCpcodes = check_cpcodes(ldsObj['contents'], args.cpcodes)
+    print('Checking cpcode list against active configs', flush=True)
+    inactiveCpcodes = check_cpcodes(ldsObj['contents'], args.cpcodes)
     inactiveCpcodes = []
     # Continue only if we have at least one CPCode without an ACTIVE config
     if len(inactiveCpcodes) > 0:
@@ -65,8 +65,7 @@ def validate_cpcodes(cpcodes):
             try:
                 int(cpcodes[i])
             except ValueError:
-                print('ERROR - Invalid CPCode: {0}'.format(cpcodes[i]))
-                return
+                raise ValueError('ERROR - Invalid CPCode: {0}'.format(cpcodes[i]))
     return cpcodes
 
 

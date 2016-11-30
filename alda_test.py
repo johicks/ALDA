@@ -14,8 +14,8 @@ def test_validate_cpcodes():
     assert cpcodes == ['123456', '789123', '456789']
 
     cpcodes = ['qwerty', 'qwerty', 'qwerty']
-    # validate_cpcodes returns None if int() conversion fails
-    assert alda.validate_cpcodes(cpcodes) is None
+    with pytest.raises(ValueError):
+        alda.validate_cpcodes(cpcodes)
 
 
 def test_create_openapi_request():
