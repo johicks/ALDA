@@ -41,3 +41,20 @@ def test_create_openapi_request():
     openapiObj = alda.create_openapi_request(edgercFile, geo)
     assert 'jg.luna.akamaiapis.net' in openapiObj['baseurl']
     assert isinstance(openapiObj['request'], requests.sessions.Session)
+
+
+def test_get_lds_configs_and_cpcodes():
+    openapiObj = alda.create_openapi_request('alda.edgerc', 'us')
+    ldsConfigs = alda.get_lds_configs(openapiObj)
+    assert ldsConfigs['errorMessage'] is None
+
+    # If test is failing, probable that one of these cpcodes status changed
+    # Check portal and update accordingly
+    cpcodes_active = ['100899', '193213', '153058']
+    cpcodes_inactive = ['513803', '482486', '453163']
+
+    empty_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active)
+    full_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_inactive)
+
+    assert len(empty_cpcode_list) == 0
+    assert len(full_cpcode_list) == 3

@@ -23,25 +23,24 @@ def main(args):
     openapiObj = create_openapi_request('alda.edgerc', args.geo)
 
     # Get List of LDS Configurations
-    print('Retreiving LDS configs', flush=True)
+    print('Retrieving LDS configs', flush=True)
     ldsObj = get_lds_configs(openapiObj)
 
     # Remove cpcodes with ACTIVE LDS configurations and warn user
     print('Checking cpcode list against active configs', flush=True)
     inactiveCpcodes = check_cpcodes(ldsObj['contents'], args.cpcodes)
-    inactiveCpcodes = []
+
     # Continue only if we have at least one CPCode without an ACTIVE config
     if len(inactiveCpcodes) > 0:
         # Connect to NetStorage and create storage locations
         print('', flush=True)
         print('Connecting to NetStorage', flush=True)
         connectionDetails = get_netstorage_credentials('alda.netstorage')
-        create_netstorage_paths(args.format, args.geo, inactiveCpcodes,
-                                connectionDetails)
+        create_netstorage_paths(args.format, args.geo, inactiveCpcodes, connectionDetails)
         # Create LDS Configurations
         print('', flush=True)
         print('Creating LDS configs', flush=True)
-        create_lds_configs(args.format, args.geo, inactiveCpcodes, connectionDetails)
+        create_lds_configs(args.format, args.geo, inactiveCpcodes, openapiObj, connectionDetails)
     else:
         return
 
@@ -70,6 +69,14 @@ def validate_cpcodes(cpcodes):
 
 
 def create_openapi_request(edgercFile, geo):
+    '''Creates http request object and signs it with Akamai EdgeGridAuth
+
+    Keyword Arguments:
+    edgercFile -- .edgerc file on disk containing Akamai API credentials
+    geo -- command line argument indicating which Luna account to access
+
+    returns dictionary
+    '''
     openapiObj = {}
     if not os.path.isfile(edgercFile):
         raise FileNotFoundError('alda.edgerc')
@@ -96,6 +103,11 @@ def get_lds_configs(openapiObj):
     '''Calls
     https://developer.akamai.com/api/luna/lds/resources.html#listconfigurations
     and lists all LDS configurations on Luna
+
+    Keyword Arguments:
+    openapiObj -- dictionary containing baseurl and signed http request object
+
+    returns dictionary
     '''
     result = openapiObj['request'].get(urljoin(openapiObj['baseurl'],
                                                '/lds/v1/configurations'
@@ -124,6 +136,21 @@ def check_cpcodes(ldsConfigs, cpcodes):
     return cpcodes
 
 
+def get_netstorage_credentials(configFile):
+    '''Pulls NetStorage connection/credential details from configFile
+    TODO: Switch to configparser?
+
+    Keyword Arguments:
+    configFile -- file on disk named alda.netstorage
+
+    returns ConfigParser
+    '''
+    config = configparser.ConfigParser()
+    config.read(configFile)
+
+    return config
+
+
 def create_netstorage_paths(sformat, geo, cpcodes, connectionDetails):
     '''Connects to Akamai's NetStorage infrastructure and creates file
     paths to receive log delivery via FTP
@@ -132,57 +159,29 @@ def create_netstorage_paths(sformat, geo, cpcodes, connectionDetails):
     sformat -- string provided by user indicating streaming format
     geo -- string provided by user indicating service geo
     cpcodes -- list of cpcodes provided by user
-    connectionDetails -- dictionary containing connection/auth info for NS
+    connectionDetails -- ConfigParser object containing NS auth details
     '''
     for cpcode in cpcodes:
         file_path = 'logdelivery/{0}/{1}/{2}'.format(sformat, geo, cpcode)
-        ns = Netstorage(connectionDetails['hostname'],
-                        connectionDetails['kname'],
-                        connectionDetails['key'], ssl=True)
-        ns_dir = '/' + connectionDetails['cpcode'] + '/' + file_path
+        ns = Netstorage(connectionDetails['DEFAULT']['Hostname'],
+                        connectionDetails['DEFAULT']['Key-name'],
+                        connectionDetails['DEFAULT']['Key'], ssl=True)
+        ns_dir = '/' + connectionDetails['DEFAULT']['Cpcode'] + '/' + file_path
         print('Creating {0}'.format(ns_dir), flush=True)
         ns.mkdir(ns_dir)
 
 
-def get_netstorage_credentials(configFile):
-    '''Pulls NetStorage connection/credential details from configFile
-    TODO: Switch to configparser?
-
-    Keyword Arguments:
-    configFile -- file on disk named alda.netstorage
-    '''
-    credentials = {}
-    with open(configFile, 'r') as f:
-        while True:
-            #TODO Investigate something here other than switch statement
-            read_data = f.readline()
-            if 'Key-name' in read_data:
-                credentials.setdefault('kname', read_data.split(':')[1].rstrip())
-            elif 'Key' in read_data:
-                credentials.setdefault('key', read_data.split(':')[1].rstrip())
-            elif 'Hostname' in read_data:
-                credentials.setdefault('hostname', read_data.split(':')[1].rstrip())
-            elif 'Cpcode' in read_data:
-                credentials.setdefault('cpcode', read_data.split(':')[1].rstrip())
-            elif 'Password' in read_data:
-                credentials.setdefault('password', read_data.split(':')[1].rstrip())
-            elif read_data == '':
-                break
-    f.closed
-    return credentials
-
-
-def create_lds_configs(sformat, geo, cpcodes, connectionDetails):
+def create_lds_configs(sformat, geo, cpcodes, openapiObj, connectionDetails):
     '''Creates new LDS configurations for each cpcode
 
     Keyword Arguments:
     sformat -- string provided by user indicating streaming format
     geo -- string provided by user indicating service geo
     cpcodes -- list of cpcodes provided by user
-    connectionDetails -- dictionary containing connection/auth info for NS
+    openapiObj -- dictionary containing baseurl and signed http request object
+    connectionDetails -- ConfigParser object containing NS auth details
     '''
     for cpcode in cpcodes:
-        # TODO: Consider moving json template to external file
         lds_payload = json.loads('''
         {
             "configurationType": "PRIMARY",
@@ -214,15 +213,13 @@ def create_lds_configs(sformat, geo, cpcodes, connectionDetails):
         lds_payload['logIdentifier'] = cpcode
         lds_payload['ftpConfiguration']['directory'] =\
             '/{0}/logdelivery/{1}/{2}/{3}'.format(
-            connectionDetails['cpcode'], sformat, geo, cpcode)
-        lds_payload['ftpConfiguration']['password'] = connectionDetails['password']
-        edgerc = EdgeRc('alda.edgerc')
-        # TODO: Select section based on geo so we can manage eu/jp
-        section = 'C-14QDNW3'
-        baseurl = 'https://{0}'.format(edgerc.get(section, 'host'))
-        s = requests.Session()
-        s.auth = EdgeGridAuth.from_edgerc(edgerc, section)
-        result = s.post(urljoin(baseurl, '/lds/v1/configurations'), data=json.dumps(lds_payload), headers={'Accept': '*/*', 'Content-Type': 'application/json'})
+            connectionDetails['DEFAULT']['Cpcode'], sformat, geo, cpcode)
+        lds_payload['ftpConfiguration']['password'] = connectionDetails['DEFAULT']['Password']
+
+        result = openapiObj['request'].post(urljoin(openapiObj['baseurl'], '/lds/v1/configurations'),
+                        data=json.dumps(lds_payload),
+                        headers={'Accept': '*/*', 'Content-Type': 'application/json'})
+
         if result.status_code == 200:
             print('LDS successfully created for CPCode: {0}'.format(cpcode), flush=True)
         else:
