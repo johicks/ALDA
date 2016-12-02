@@ -40,7 +40,8 @@ def main(args):
         # Create LDS Configurations
         print('', flush=True)
         print('Creating LDS configs', flush=True)
-        create_lds_configs(args.format, args.geo, inactiveCpcodes, openapiObj, connectionDetails)
+        create_lds_configs(args.format, args.geo, inactiveCpcodes,
+                           openapiObj, connectionDetails)
     else:
         return
 
@@ -58,8 +59,10 @@ def validate_cpcodes(cpcodes):
         cpcodes = cpcodes[0].split(',')
     else:
         for i in range(len(cpcodes)):
-            # Remove commas from list if user entered comma separated arguments
-            cpcodes[i] = cpcodes[i].replace(',', '')
+            if ',' in cpcodes[i]:
+                # Remove commas from list if user entered comma separated arguments
+                cpcodes[i] = cpcodes[i].replace(',', '')
+
             # Check that each CPCode is a valid integer
             try:
                 int(cpcodes[i])
@@ -127,18 +130,17 @@ def check_cpcodes(ldsConfigs, cpcodes):
     '''
     for config in range(len(ldsConfigs)):
         cpcode = ldsConfigs[config]['cpCode']['dictId']
-        cpcode_name = ldsConfigs[config]['cpCode']['dictValue']
         status = ldsConfigs[config]['status']
         if cpcode in cpcodes and status == 'ACTIVE':
             cpcodes.remove(cpcode)
-            print('CPCode {0} - {1} has an active LDS configuration. '
+            cpcode_name = ldsConfigs[config]['cpCode']['dictValue']
+            print('CPCode {0} - "{1}" has an active LDS configuration. '
                   'Please manually review.'.format(cpcode, cpcode_name), flush=True)
     return cpcodes
 
 
 def get_netstorage_credentials(configFile):
     '''Pulls NetStorage connection/credential details from configFile
-    TODO: Switch to configparser?
 
     Keyword Arguments:
     configFile -- file on disk named alda.netstorage
@@ -166,7 +168,7 @@ def create_netstorage_paths(sformat, geo, cpcodes, connectionDetails):
         ns = Netstorage(connectionDetails['DEFAULT']['Hostname'],
                         connectionDetails['DEFAULT']['Key-name'],
                         connectionDetails['DEFAULT']['Key'], ssl=True)
-        ns_dir = '/' + connectionDetails['DEFAULT']['Cpcode'] + '/' + file_path
+        ns_dir = '/{0}/{1}'.format(connectionDetails['DEFAULT']['Cpcode'], file_path)
         print('Creating {0}'.format(ns_dir), flush=True)
         ns.mkdir(ns_dir)
 
@@ -217,8 +219,8 @@ def create_lds_configs(sformat, geo, cpcodes, openapiObj, connectionDetails):
         lds_payload['ftpConfiguration']['password'] = connectionDetails['DEFAULT']['Password']
 
         result = openapiObj['request'].post(urljoin(openapiObj['baseurl'], '/lds/v1/configurations'),
-                        data=json.dumps(lds_payload),
-                        headers={'Accept': '*/*', 'Content-Type': 'application/json'})
+                                            data=json.dumps(lds_payload),
+                                            headers={'Accept': '*/*', 'Content-Type': 'application/json'})
 
         if result.status_code == 200:
             print('LDS successfully created for CPCode: {0}'.format(cpcode), flush=True)

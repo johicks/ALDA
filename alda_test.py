@@ -43,7 +43,7 @@ def test_create_openapi_request():
     assert isinstance(openapiObj['request'], requests.sessions.Session)
 
 
-def test_get_lds_configs_and_cpcodes():
+def test_get_lds_configs_and_cpcodes_us():
     openapiObj = alda.create_openapi_request('alda.edgerc', 'us')
     ldsConfigs = alda.get_lds_configs(openapiObj)
     assert ldsConfigs['errorMessage'] is None
@@ -52,6 +52,40 @@ def test_get_lds_configs_and_cpcodes():
     # Check portal and update accordingly
     cpcodes_active = ['100899', '193213', '153058']
     cpcodes_inactive = ['513803', '482486', '453163']
+
+    empty_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active)
+    full_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_inactive)
+
+    assert len(empty_cpcode_list) == 0
+    assert len(full_cpcode_list) == 3
+
+
+def test_get_lds_configs_and_cpcodes_eu():
+    openapiObj = alda.create_openapi_request('alda.edgerc', 'eu')
+    ldsConfigs = alda.get_lds_configs(openapiObj)
+    assert ldsConfigs['errorMessage'] is None
+
+    # If test is failing, probable that one of these cpcodes status changed
+    # Check portal and update accordingly
+    cpcodes_active = ['175681', '203346', '269263']
+    cpcodes_inactive = ['526922', '457310', '411230']
+
+    empty_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active)
+    full_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_inactive)
+
+    assert len(empty_cpcode_list) == 0
+    assert len(full_cpcode_list) == 3
+
+
+def test_get_lds_configs_and_cpcodes_jp():
+    openapiObj = alda.create_openapi_request('alda.edgerc', 'jp')
+    ldsConfigs = alda.get_lds_configs(openapiObj)
+    assert ldsConfigs['errorMessage'] is None
+
+    # If test is failing, probable that one of these cpcodes status changed
+    # Check portal and update accordingly
+    cpcodes_active = ['202369', '272610', '384159']
+    cpcodes_inactive = ['515552', '515550', '515551']
 
     empty_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active)
     full_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_inactive)
