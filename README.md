@@ -3,6 +3,7 @@ ALDA is a tool built for an Akamai Integrated Account Team (IAT) to manage deliv
 
 ## Installation
 `pip install netstorageapi`
+
 `pip install edgegrid-python`
 
 ## Configuration
@@ -10,14 +11,14 @@ ALDA looks for the following files in its working directory:
 * alda.edgerc
 * alda.netstorage
 
-alda.edgerc follows Akamai's .edgerc format.
+alda.edgerc follows Akamai's .edgerc format:
 
->[SECTION1]
->host = foo.luna.akamaiapis.net/
->client_token = foo
->client_secret = foo
->access_token = foo
->max_body = 131072
+[SECTION1]
+host = foo.luna.akamaiapis.net/
+client_token = foo
+client_secret = foo
+access_token = foo
+max_body = 131072
 [SECTION2]
 host = foo.luna.akamaiapis.net/
 client_token = foo
@@ -32,7 +33,8 @@ access_token = foo
 max_body = 131072
 
 alda.netstorage follows the following convention:
->[DEFAULT]
+
+[DEFAULT]
 Key-name = foo
 Key = foo
 Hostname = foo-nsu.akamaihd.net
