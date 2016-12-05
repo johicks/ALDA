@@ -14,6 +14,7 @@ ALDA looks for the following files in its working directory:
 alda.edgerc follows Akamai's .edgerc format:
 
 [SECTION1]
+
 host = foo.luna.akamaiapis.net/
 
 client_token = foo
