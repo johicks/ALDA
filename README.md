@@ -13,14 +13,12 @@ ALDA looks for the following files in its working directory:
 
 alda.edgerc follows Akamai's .edgerc format:
 
-[SECTION1]
-
-host = foo.luna.akamaiapis.net/
-
-client_token = foo
-client_secret = foo
-access_token = foo
-max_body = 131072
+>[SECTION1]  
+host = foo.luna.akamaiapis.net/  
+client_token = foo  
+client_secret = foo  
+access_token = foo  
+max_body = 131072  
 [SECTION2]
 host = foo.luna.akamaiapis.net/
 client_token = foo
