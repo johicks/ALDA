@@ -1,7 +1,7 @@
 # ALDA - Amazon Log Delivery Automation
 ALDA is a tool built for an Akamai Integrated Account Team (IAT) to manage delivery of logs from Akamai's HTTP/S networks to Akamai's NetStorage platform for later customer ingest.
 
-## Installation
+## 3rd Party Library Installation
 `pip install netstorageapi`  
 `pip install edgegrid-python`  
 
