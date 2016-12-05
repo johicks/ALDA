@@ -15,6 +15,7 @@ alda.edgerc follows Akamai's .edgerc format:
 
 [SECTION1]
 host = foo.luna.akamaiapis.net/
+
 client_token = foo
 client_secret = foo
 access_token = foo
