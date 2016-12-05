@@ -42,3 +42,6 @@ Password = foo
 
 #Usage
 `./alda.py --format dash --geo us --cpcodes 123456 123456`
+
+#Tests
+alda_test.py can be used in conjunction with pytest for regression testing after code extension/refactoring
