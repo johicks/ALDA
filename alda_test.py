@@ -98,9 +98,8 @@ def test_get_lds_configs_and_cpcodes_jp():
 
 
 def test_get_ns_credentials():
-    with pytest.raises(KeyError):
+    with pytest.raises(FileNotFoundError):
         config = alda.get_netstorage_credentials('null')
-        print(config['DEFAULT']['Hostname'])
 
     config = alda.get_netstorage_credentials('alda.netstorage')
     assert config['DEFAULT']['Hostname'] is not False

@@ -82,7 +82,7 @@ def create_openapi_request(edgercFile, geo):
     '''
     openapiObj = {}
     if not os.path.isfile(edgercFile):
-        raise FileNotFoundError('alda.edgerc')
+        raise FileNotFoundError(edgercFile)
     edgerc = EdgeRc(edgercFile)
     section = 'C-14QDNW3'
     if geo == 'eu':
@@ -147,8 +147,11 @@ def get_netstorage_credentials(configFile):
 
     returns ConfigParser
     '''
-    config = configparser.ConfigParser()
-    config.read(configFile)
+    if not os.path.isfile(configFile):
+        raise FileNotFoundError(configFile)
+    else:
+        config = configparser.ConfigParser()
+        config.read(configFile)
 
     return config
 
@@ -164,11 +167,11 @@ def create_netstorage_paths(sformat, geo, cpcodes, connectionDetails):
     connectionDetails -- ConfigParser object containing NS auth details
     '''
     for cpcode in cpcodes:
-        file_path = 'logdelivery/{0}/{1}/{2}'.format(sformat, geo, cpcode)
         ns = Netstorage(connectionDetails['DEFAULT']['Hostname'],
                         connectionDetails['DEFAULT']['Key-name'],
                         connectionDetails['DEFAULT']['Key'], ssl=True)
-        ns_dir = '/{0}/{1}'.format(connectionDetails['DEFAULT']['Cpcode'], file_path)
+        ns_dir = '/{0}/logdelivery/{1}/{2}/{3}'\
+                .format(connectionDetails['DEFAULT']['Cpcode'], sformat, geo, cpcode)
         print('Creating {0}'.format(ns_dir), flush=True)
         ns.mkdir(ns_dir)
 
