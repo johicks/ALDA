@@ -18,7 +18,6 @@ def main(args):
     '''Performs main program functions when command line arguments exist'''
     # Perform some basic validation/triage on cpcode arguments
     args.cpcodes = validate_cpcodes(args.cpcodes)
-    print(args)
 
     # Get OPEN API credentials and create connection object
     openapiObj = create_openapi_request('alda.edgerc')
@@ -32,7 +31,7 @@ def main(args):
     inactiveCpcodes = check_cpcodes(ldsObj['contents'], args.cpcodes, args.forcelds)
 
     # Continue only if we have at least one CPCode without an ACTIVE config
-    if len(inactiveCpcodes) > 0 or args.forcelds is True:
+    if len(inactiveCpcodes) > 0:
         # Connect to NetStorage and create storage locations
         print('', flush=True)
         print('Connecting to NetStorage', flush=True)
@@ -125,7 +124,6 @@ def check_cpcodes(ldsConfigs, cpcodes, forcelds):
     cpcodes -- list of cpcodes provided by user via command line
     '''
     if forcelds == 'True':
-        print(cpcodes)
         return cpcodes
     else:
         for config in range(len(ldsConfigs)):
