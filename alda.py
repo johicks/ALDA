@@ -28,7 +28,7 @@ def main(args):
 
     # Remove cpcodes with ACTIVE LDS configurations and warn user
     print('Checking cpcode list against active configs', flush=True)
-    inactiveCpcodes = check_cpcodes(ldsObj['contents'], args.cpcodes, args.forcelds)
+    inactiveCpcodes = check_cpcodes(ldsObj['contents'], args.cpcodes, args.force)
 
     # Continue only if we have at least one CPCode without an ACTIVE config
     if len(inactiveCpcodes) > 0:
@@ -114,7 +114,7 @@ def get_lds_configs(openapiObj):
     return result.json()
 
 
-def check_cpcodes(ldsConfigs, cpcodes, forcelds):
+def check_cpcodes(ldsConfigs, cpcodes, force):
     '''Loops through log delivery configs and checks list of cpcodes given by
     user to see if they are listed with ACTIVE status, indicating they are
     already being delivered somewhere
@@ -123,7 +123,7 @@ def check_cpcodes(ldsConfigs, cpcodes, forcelds):
     ldsConfigs -- deserialized json response from LDS API
     cpcodes -- list of cpcodes provided by user via command line
     '''
-    if forcelds == 'True':
+    if force == 'True':
         return cpcodes
     else:
         for config in range(len(ldsConfigs)):
@@ -133,7 +133,7 @@ def check_cpcodes(ldsConfigs, cpcodes, forcelds):
                 cpcodes.remove(cpcode)
                 cpcode_name = ldsConfigs[config]['cpCode']['dictValue']
                 print('CPCode {0} - "{1}" has an active LDS configuration. '
-                      'Please manually review or run with --forcelds.'.format(cpcode, cpcode_name), flush=True)
+                      'Please manually review or run with --force.'.format(cpcode, cpcode_name), flush=True)
         return cpcodes
 
 
@@ -246,9 +246,9 @@ if __name__ == '__main__':
     parser.add_argument('--cpcodes', required=True, nargs='*',
                         help='List of CPCodes for LDS enablement.\
                         Takes comma or space separated list.')
-    parser.add_argument('--forcelds', required=True,
+    parser.add_argument('--force', required=True,
                         choices=['True', 'False'],
-                        help='Force the LDS setup (even if CPCode has an active LDS config)')
+                        help='Force the LDS setup (even if CPCode has an active LDS config or NetStorage folder(s) exist)')
 
     args = parser.parse_args()
     main(args)

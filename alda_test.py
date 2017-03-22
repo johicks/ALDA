@@ -41,15 +41,15 @@ def test_get_lds_configs_and_cpcodes_us():
     # Check portal and update accordingly
     cpcodes_active = ['100899', '193213', '153058']
     cpcodes_inactive = ['482486', '453163']
-    cpcodes_active_forcelds = ['100899', '193213', '153058']
+    cpcodes_active_force = ['100899', '193213', '153058']
 
     empty_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active, 'False')
     full_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_inactive, 'False')
-    full_cpcode_list_via_forcelds = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active_forcelds, 'True')
+    full_cpcode_list_via_force = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active_force, 'True')
 
     assert len(empty_cpcode_list) == 0
     assert len(full_cpcode_list) == 2
-    assert len(full_cpcode_list_via_forcelds) == 3
+    assert len(full_cpcode_list_via_force) == 3
 
 
 def test_get_lds_configs_and_cpcodes_eu():
@@ -61,18 +61,18 @@ def test_get_lds_configs_and_cpcodes_eu():
     # Check portal and update accordingly
     cpcodes_active = ['175681', '203346', '269263']
     cpcodes_inactive = ['526922', '457310', '411230']
-    cpcodes_active_forcelds = ['175681', '203346', '269263']
+    cpcodes_active_force = ['175681', '203346', '269263']
 
     empty_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active, 'False')
     full_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_inactive, 'False')
-    full_cpcode_list_via_forcelds = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active_forcelds, 'True')
+    full_cpcode_list_via_force = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active_force, 'True')
 
     print(empty_cpcode_list)
     print(full_cpcode_list)
-    print(full_cpcode_list_via_forcelds)
+    print(full_cpcode_list_via_force)
     assert len(empty_cpcode_list) == 0
     assert len(full_cpcode_list) == 3
-    assert len(full_cpcode_list_via_forcelds) == 3
+    assert len(full_cpcode_list_via_force) == 3
 
 
 def test_get_lds_configs_and_cpcodes_jp():
@@ -84,15 +84,15 @@ def test_get_lds_configs_and_cpcodes_jp():
     # Check portal and update accordingly
     cpcodes_active = ['202369', '272610', '384159']
     cpcodes_inactive = ['515552', '515550', '515551']
-    cpcodes_active_forcelds = ['202369', '272610', '384159']
+    cpcodes_active_force = ['202369', '272610', '384159']
 
     empty_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active, 'False')
     full_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_inactive, 'False')
-    full_cpcode_list_via_forcelds = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active_forcelds, 'True')
+    full_cpcode_list_via_force = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active_force, 'True')
 
     assert len(empty_cpcode_list) == 0
     assert len(full_cpcode_list) == 3
-    assert len(full_cpcode_list_via_forcelds) == 3
+    assert len(full_cpcode_list_via_force) == 3
 
 
 def test_get_ns_credentials():
