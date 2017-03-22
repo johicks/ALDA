@@ -18,9 +18,10 @@ def main(args):
     '''Performs main program functions when command line arguments exist'''
     # Perform some basic validation/triage on cpcode arguments
     args.cpcodes = validate_cpcodes(args.cpcodes)
+    print(args)
 
     # Get OPEN API credentials and create connection object
-    openapiObj = create_openapi_request('alda.edgerc', args.geo)
+    openapiObj = create_openapi_request('alda.edgerc')
 
     # Get List of LDS Configurations
     print('Retrieving LDS configs', flush=True)
@@ -28,10 +29,10 @@ def main(args):
 
     # Remove cpcodes with ACTIVE LDS configurations and warn user
     print('Checking cpcode list against active configs', flush=True)
-    inactiveCpcodes = check_cpcodes(ldsObj['contents'], args.cpcodes)
+    inactiveCpcodes = check_cpcodes(ldsObj['contents'], args.cpcodes, args.forcelds)
 
     # Continue only if we have at least one CPCode without an ACTIVE config
-    if len(inactiveCpcodes) > 0:
+    if len(inactiveCpcodes) > 0 or args.forcelds is True:
         # Connect to NetStorage and create storage locations
         print('', flush=True)
         print('Connecting to NetStorage', flush=True)
@@ -71,24 +72,19 @@ def validate_cpcodes(cpcodes):
     return cpcodes
 
 
-def create_openapi_request(edgercFile, geo):
-    '''Creates http request object and signs it with Akamai EdgeGridAuth
+def create_openapi_request(edgercFile):
+    """Create http request object and signs it with Akamai EdgeGridAuth.
 
     Keyword Arguments:
     edgercFile -- .edgerc file on disk containing Akamai API credentials
-    geo -- command line argument indicating which Luna account to access
 
     returns dictionary
-    '''
+    """
     openapiObj = {}
     if not os.path.isfile(edgercFile):
         raise FileNotFoundError(edgercFile)
     edgerc = EdgeRc(edgercFile)
-    section = 'C-14QDNW3'
-    if geo == 'eu':
-        section = '3-11XPV4E'
-    elif geo == 'jp':
-        section = 'C-XGVIZ2'
+    section = 'Default'
     baseurl = 'https://{0}'.format(edgerc.get(section, 'host'))
     s = requests.Session()
     try:
@@ -119,7 +115,7 @@ def get_lds_configs(openapiObj):
     return result.json()
 
 
-def check_cpcodes(ldsConfigs, cpcodes):
+def check_cpcodes(ldsConfigs, cpcodes, forcelds):
     '''Loops through log delivery configs and checks list of cpcodes given by
     user to see if they are listed with ACTIVE status, indicating they are
     already being delivered somewhere
@@ -128,15 +124,19 @@ def check_cpcodes(ldsConfigs, cpcodes):
     ldsConfigs -- deserialized json response from LDS API
     cpcodes -- list of cpcodes provided by user via command line
     '''
-    for config in range(len(ldsConfigs)):
-        cpcode = ldsConfigs[config]['cpCode']['dictId']
-        status = ldsConfigs[config]['status']
-        if cpcode in cpcodes and status == 'ACTIVE':
-            cpcodes.remove(cpcode)
-            cpcode_name = ldsConfigs[config]['cpCode']['dictValue']
-            print('CPCode {0} - "{1}" has an active LDS configuration. '
-                  'Please manually review.'.format(cpcode, cpcode_name), flush=True)
-    return cpcodes
+    if forcelds == 'True':
+        print(cpcodes)
+        return cpcodes
+    else:
+        for config in range(len(ldsConfigs)):
+            cpcode = ldsConfigs[config]['cpCode']['dictId']
+            status = ldsConfigs[config]['status']
+            if cpcode in cpcodes and status == 'ACTIVE':
+                cpcodes.remove(cpcode)
+                cpcode_name = ldsConfigs[config]['cpCode']['dictValue']
+                print('CPCode {0} - "{1}" has an active LDS configuration. '
+                      'Please manually review or run with --forcelds.'.format(cpcode, cpcode_name), flush=True)
+        return cpcodes
 
 
 def get_netstorage_credentials(configFile):
@@ -147,11 +147,8 @@ def get_netstorage_credentials(configFile):
 
     returns ConfigParser
     '''
-    if not os.path.isfile(configFile):
-        raise FileNotFoundError(configFile)
-    else:
-        config = configparser.ConfigParser()
-        config.read(configFile)
+    config = configparser.ConfigParser()
+    config.read(configFile)
 
     return config
 
@@ -171,9 +168,14 @@ def create_netstorage_paths(sformat, geo, cpcodes, connectionDetails):
                         connectionDetails['DEFAULT']['Key-name'],
                         connectionDetails['DEFAULT']['Key'], ssl=True)
         ns_dir = '/{0}/logdelivery/{1}/{2}/{3}'\
-                .format(connectionDetails['DEFAULT']['Cpcode'], sformat, geo, cpcode)
+            .format(connectionDetails['DEFAULT']['Cpcode'], sformat, geo, cpcode)
         print('Creating {0}'.format(ns_dir), flush=True)
-        ns.mkdir(ns_dir)
+        ok, response = ns.mkdir(ns_dir)
+
+        if ok is True:
+            print('Sucessfully created path {0}.'.format(ns_dir), flush=True)
+        else:
+            print('Error creating {0}. The error response code was {1}: {2}'.format(ns_dir, response.status_code, response.text), flush=True)
 
 
 def create_lds_configs(sformat, geo, cpcodes, openapiObj, connectionDetails):
@@ -242,11 +244,13 @@ if __name__ == '__main__':
                         help='Streaming format (determines NS file path)')
     parser.add_argument('--geo', required=True,
                         choices=['eu', 'in', 'jp', 'row', 'us'],
-                        help='Geo (determines NS file path AND\
-                        Luna account for LDS enablement)')
+                        help='Geo (determines NS file path for LDS enablement)')
     parser.add_argument('--cpcodes', required=True, nargs='*',
                         help='List of CPCodes for LDS enablement.\
                         Takes comma or space separated list.')
+    parser.add_argument('--forcelds', required=True,
+                        choices=['True', 'False'],
+                        help='Force the LDS setup (even if CPCode has an active LDS config)')
 
     args = parser.parse_args()
     main(args)

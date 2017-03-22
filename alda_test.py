@@ -23,48 +23,37 @@ def test_validate_cpcodes():
 
 def test_create_openapi_request():
     edgercFile = 'null'
-    geo = 'null'
     with pytest.raises(FileNotFoundError):
-        alda.create_openapi_request(edgercFile, geo)
+        alda.create_openapi_request(edgercFile)
 
     edgercFile = 'alda.edgerc'
-    geo = 'null'
-    openapiObj = alda.create_openapi_request(edgercFile, geo)
+    openapiObj = alda.create_openapi_request(edgercFile)
     assert 'v2.luna.akamaiapis.net' in openapiObj['baseurl']
-    assert isinstance(openapiObj['request'], requests.sessions.Session)
-
-    edgercFile = 'alda.edgerc'
-    geo = 'eu'
-    openapiObj = alda.create_openapi_request(edgercFile, geo)
-    assert 'gb.luna.akamaiapis.net' in openapiObj['baseurl']
-    assert isinstance(openapiObj['request'], requests.sessions.Session)
-
-    edgercFile = 'alda.edgerc'
-    geo = 'jp'
-    openapiObj = alda.create_openapi_request(edgercFile, geo)
-    assert 'jg.luna.akamaiapis.net' in openapiObj['baseurl']
     assert isinstance(openapiObj['request'], requests.sessions.Session)
 
 
 def test_get_lds_configs_and_cpcodes_us():
-    openapiObj = alda.create_openapi_request('alda.edgerc', 'us')
+    openapiObj = alda.create_openapi_request('alda.edgerc')
     ldsConfigs = alda.get_lds_configs(openapiObj)
     assert ldsConfigs['errorMessage'] is None
 
     # If test is failing, probable that one of these cpcodes status changed
     # Check portal and update accordingly
     cpcodes_active = ['100899', '193213', '153058']
-    cpcodes_inactive = ['513803', '482486', '453163']
+    cpcodes_inactive = ['482486', '453163']
+    cpcodes_active_forcelds = ['100899', '193213', '153058']
 
-    empty_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active)
-    full_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_inactive)
+    empty_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active, 'False')
+    full_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_inactive, 'False')
+    full_cpcode_list_via_forcelds = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active_forcelds, 'True')
 
     assert len(empty_cpcode_list) == 0
-    assert len(full_cpcode_list) == 3
+    assert len(full_cpcode_list) == 2
+    assert len(full_cpcode_list_via_forcelds) == 3
 
 
 def test_get_lds_configs_and_cpcodes_eu():
-    openapiObj = alda.create_openapi_request('alda.edgerc', 'eu')
+    openapiObj = alda.create_openapi_request('alda.edgerc')
     ldsConfigs = alda.get_lds_configs(openapiObj)
     assert ldsConfigs['errorMessage'] is None
 
@@ -72,16 +61,22 @@ def test_get_lds_configs_and_cpcodes_eu():
     # Check portal and update accordingly
     cpcodes_active = ['175681', '203346', '269263']
     cpcodes_inactive = ['526922', '457310', '411230']
+    cpcodes_active_forcelds = ['175681', '203346', '269263']
 
-    empty_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active)
-    full_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_inactive)
+    empty_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active, 'False')
+    full_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_inactive, 'False')
+    full_cpcode_list_via_forcelds = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active_forcelds, 'True')
 
+    print(empty_cpcode_list)
+    print(full_cpcode_list)
+    print(full_cpcode_list_via_forcelds)
     assert len(empty_cpcode_list) == 0
     assert len(full_cpcode_list) == 3
+    assert len(full_cpcode_list_via_forcelds) == 3
 
 
 def test_get_lds_configs_and_cpcodes_jp():
-    openapiObj = alda.create_openapi_request('alda.edgerc', 'jp')
+    openapiObj = alda.create_openapi_request('alda.edgerc')
     ldsConfigs = alda.get_lds_configs(openapiObj)
     assert ldsConfigs['errorMessage'] is None
 
@@ -89,18 +84,18 @@ def test_get_lds_configs_and_cpcodes_jp():
     # Check portal and update accordingly
     cpcodes_active = ['202369', '272610', '384159']
     cpcodes_inactive = ['515552', '515550', '515551']
+    cpcodes_active_forcelds = ['202369', '272610', '384159']
 
-    empty_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active)
-    full_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_inactive)
+    empty_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active, 'False')
+    full_cpcode_list = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_inactive, 'False')
+    full_cpcode_list_via_forcelds = alda.check_cpcodes(ldsConfigs['contents'], cpcodes_active_forcelds, 'True')
 
     assert len(empty_cpcode_list) == 0
     assert len(full_cpcode_list) == 3
+    assert len(full_cpcode_list_via_forcelds) == 3
 
 
 def test_get_ns_credentials():
-    with pytest.raises(FileNotFoundError):
-        config = alda.get_netstorage_credentials('null')
-
     config = alda.get_netstorage_credentials('alda.netstorage')
     assert config['DEFAULT']['Hostname'] is not False
     assert config['DEFAULT']['Key-name'] is not False
@@ -134,7 +129,7 @@ def test_create_lds_configs():
     sformat = 'smooth'
     geo = 'us'
     cpcode = '525828'
-    openapiObj = alda.create_openapi_request('alda.edgerc', geo)
+    openapiObj = alda.create_openapi_request('alda.edgerc')
     connectionDetails = alda.get_netstorage_credentials('alda.netstorage')
 
     lds_payload = json.loads('''
