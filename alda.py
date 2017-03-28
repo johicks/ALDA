@@ -203,7 +203,7 @@ def create_lds_configs(sformat, geo, cpcodes, openapiObj, connectionDetails):
             "deliveryFrequency": {"dictId": "7"},
             "ftpConfiguration": {
                 "directory": "",
-                "machine": "adsiuslogs.download.akamai.com",
+                "machine": "adsiuslogs.upload.akamai.com",
                 "login": "amazonlogs",
                 "password": ""
             },
