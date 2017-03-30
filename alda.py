@@ -246,8 +246,8 @@ if __name__ == '__main__':
     parser.add_argument('--cpcodes', required=True, nargs='*',
                         help='List of CPCodes for LDS enablement.\
                         Takes comma or space separated list.')
-    parser.add_argument('--force', required=True,
-                        choices=['True', 'False'],
+    parser.add_argument('--force', required=False,
+                        action='store_true',
                         help='Force the LDS setup (even if CPCode has an active LDS config or NetStorage folder(s) exist)')
 
     args = parser.parse_args()
